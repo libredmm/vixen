@@ -11,9 +11,9 @@ Bun/TypeScript CLI that scrapes video metadata from vixen network sites. Replace
 ```bash
 just install                                   # install deps + link global binary
 export VIXEN_DATA_DIR=/path/to/data            # or --data; default: $XDG_DATA_HOME/vixen
-vixen                                          # full pipeline: checkout → scrape → commit+push
 vixen checkout                                 # clone or update metadata repo
-vixen scrape [sites...]                        # scrape, compress, commit, push
+vixen scrape [sites...]                        # checkout, scrape, compress, commit, push
+vixen guess <files...>                         # checkout, guess canonical filename
 ```
 
 Global flags: `-v`/`--verbose`, `-q`/`--quiet`, `-n`/`--no-push` (skip git push). Deploy to Linux: `just deploy-linux <host>`.
@@ -26,9 +26,10 @@ Global flags: `-v`/`--verbose`, `-q`/`--quiet`, `-n`/`--no-push` (skip git push)
 
 ## Architecture
 
-- **cli.ts** — Entry point, Commander subcommands (`checkout`, `scrape`), default action runs full pipeline
+- **cli.ts** — Entry point, Commander subcommands (`checkout`, `scrape`, `guess`). Scrape and guess auto-checkout first
 - **browser.ts** — Puppeteer-extra with StealthPlugin (absorbed from `purl` project). Single browser instance shared across all sites. `fetchPage()` creates a tab, sets cookies, navigates with `networkidle0`, returns HTML
-- **scraper.ts** — Per-site scrape: fetches paginated video listings, extracts `#__NEXT_DATA__` JSON via cheerio, deduplicates against existing entries using a `Set<videoId>`, stops when duplicates found
+- **scrape.ts** — Per-site scrape + `runScrape` orchestrator. Lazy-loaded to keep puppeteer out of compiled binary
+- **guess.ts** — Looks up video in `.min.json` by date or 6-digit ID, builds canonical filename
 - **compress.ts** — Sorts entries by `videoId` descending, generates `.min.json` (strips `expertReview`, `previews`, `images`, `cursor`)
 - **sites.ts** — Auto-discovers sites from `*.json` files (excluding `*.min.json`) in output dir
 - **log.ts** — Consola logger with verbosity levels (`-v` for debug, `-q` for warn-only)
