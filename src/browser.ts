@@ -1,42 +1,42 @@
+import type { Browser } from "puppeteer";
 import puppeteer from "puppeteer-extra";
 import StealthPlugin from "puppeteer-extra-plugin-stealth";
-import type { Browser } from "puppeteer";
 import { logger } from "./log.ts";
 
 puppeteer.use(StealthPlugin());
 
 export async function createBrowser(): Promise<Browser> {
-  return await puppeteer.launch({ headless: true });
+	return await puppeteer.launch({ headless: true });
 }
 
 interface Cookie {
-  name: string;
-  value: string;
+	name: string;
+	value: string;
 }
 
 export async function fetchPage(
-  browser: Browser,
-  url: string,
-  cookies: Cookie[] = [],
+	browser: Browser,
+	url: string,
+	cookies: Cookie[] = [],
 ): Promise<string> {
-  const { hostname } = new URL(url);
+	const { hostname } = new URL(url);
 
-  if (cookies.length > 0) {
-    const cookieObjects = cookies.map((c) => ({
-      name: c.name,
-      value: c.value,
-      domain: hostname,
-      path: "/",
-    }));
-    await browser.setCookie(...cookieObjects);
-  }
+	if (cookies.length > 0) {
+		const cookieObjects = cookies.map((c) => ({
+			name: c.name,
+			value: c.value,
+			domain: hostname,
+			path: "/",
+		}));
+		await browser.setCookie(...cookieObjects);
+	}
 
-  const page = await browser.newPage();
-  try {
-    logger.debug(`Navigating to: ${url}`);
-    await page.goto(url, { waitUntil: "networkidle0", timeout: 60_000 });
-    return await page.content();
-  } finally {
-    await page.close();
-  }
+	const page = await browser.newPage();
+	try {
+		logger.debug(`Navigating to: ${url}`);
+		await page.goto(url, { waitUntil: "networkidle0", timeout: 60_000 });
+		return await page.content();
+	} finally {
+		await page.close();
+	}
 }

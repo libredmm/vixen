@@ -1,16 +1,21 @@
 {
-  "name": "vixen-scrape",
-  "version": "1.0.0",
-  "type": "module",
-  "bin": {
-    "vixen-scrape": "./src/cli.ts"
-  },
-  "dependencies": {
-    "cheerio": "^1.0",
-    "commander": "^13",
-    "consola": "^3.4.2",
-    "puppeteer": "^24",
-    "puppeteer-extra": "^3.3",
-    "puppeteer-extra-plugin-stealth": "^2.11"
-  }
+	"name": "vixen",
+	"version": "1.0.0",
+	"type": "module",
+	"bin": {
+		"vixen": "./src/cli.ts"
+	},
+	"dependencies": {
+		"cheerio": "^1.0",
+		"commander": "^13",
+		"consola": "^3.4.2",
+		"puppeteer": "^24",
+		"puppeteer-extra": "^3.3",
+		"puppeteer-extra-plugin-stealth": "^2.11"
+	},
+	"devDependencies": {
+		"@biomejs/biome": "^2.4.9",
+		"bun-types": "^1.3.11",
+		"typescript": "^6.0.2"
+	}
 }
