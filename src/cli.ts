@@ -3,11 +3,7 @@
 import { existsSync } from "node:fs";
 import { $ } from "bun";
 import { Command, Option } from "commander";
-import { createBrowser } from "./browser.ts";
-import { compressSite } from "./compress.ts";
 import { logger, setLevel } from "./log.ts";
-import { scrapeSite } from "./scraper.ts";
-import { discoverSites } from "./sites.ts";
 
 const program = new Command();
 
@@ -51,41 +47,11 @@ program
 		if (!dataDir) {
 			program.error("--data or VIXEN_DATA_DIR is required");
 		}
-
-		if (sites.length === 0) {
-			sites = await discoverSites(dataDir);
-			logger.info(`No site specified, scraping all sites: ${sites.join(", ")}`);
-		}
-
-		const browser = await createBrowser();
-		let counts: number[];
-		try {
-			counts = await Promise.all(
-				sites.map((site) => scrapeSite(browser, site, dataDir)),
-			);
-		} finally {
-			await browser.close();
-		}
-
-		await Promise.all(sites.map((site) => compressSite(site, dataDir)));
-
-		// Commit and push if there are changes
-		const summary = sites
-			.map((site, i) => ({ site, count: counts[i] }))
-			.filter(({ count }) => count > 0)
-			.map(({ site, count }) => `${site} (+${count})`)
-			.join(", ");
-
-		if (!summary) {
-			logger.info("Nothing changed, skipping commit");
-			return;
-		}
-
-		await $`git -C ${dataDir} add .`;
-		await $`git -C ${dataDir} commit -m ${`Update ${summary}`}`;
-		if (push) {
-			await $`git -C ${dataDir} push`;
-		}
+		// Variable prevents Bun from resolving this at bundle time,
+		// keeping puppeteer out of the compiled binary
+		const mod = "./scrape.ts";
+		const { runScrape } = await import(mod);
+		await runScrape(dataDir, push, sites);
 	});
 
 const REPO = "git@github.com:libredmm/vixen_metadata.git";

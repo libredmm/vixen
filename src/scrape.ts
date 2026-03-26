@@ -1,13 +1,16 @@
 import { existsSync } from "node:fs";
 import { join } from "node:path";
+import { $ } from "bun";
 import { load } from "cheerio";
 import type { Browser } from "puppeteer";
 import { fetchPage } from "./browser.ts";
+import { compressSite } from "./compress.ts";
 import { logger } from "./log.ts";
+import { discoverSites } from "./sites.ts";
 
 const COOKIES = [{ name: "consent", value: "0" }];
 
-export async function scrapeSite(
+async function scrapeSite(
 	browser: Browser,
 	site: string,
 	outputDir: string,
@@ -92,4 +95,46 @@ export async function scrapeSite(
 	}
 
 	return newEntries.length;
+}
+
+export async function runScrape(
+	dataDir: string,
+	push: boolean,
+	sites: string[],
+): Promise<void> {
+	if (sites.length === 0) {
+		sites = await discoverSites(dataDir);
+		logger.info(`No site specified, scraping all sites: ${sites.join(", ")}`);
+	}
+
+	const { createBrowser } = await import("./browser.ts");
+	const browser = await createBrowser();
+	let counts: number[];
+	try {
+		counts = await Promise.all(
+			sites.map((site) => scrapeSite(browser, site, dataDir)),
+		);
+	} finally {
+		await browser.close();
+	}
+
+	await Promise.all(sites.map((site) => compressSite(site, dataDir)));
+
+	// Commit and push if there are changes
+	const summary = sites
+		.map((site, i) => ({ site, count: counts[i] }))
+		.filter(({ count }) => count > 0)
+		.map(({ site, count }) => `${site} (+${count})`)
+		.join(", ");
+
+	if (!summary) {
+		logger.info("Nothing changed, skipping commit");
+		return;
+	}
+
+	await $`git -C ${dataDir} add .`;
+	await $`git -C ${dataDir} commit -m ${`Update ${summary}`}`;
+	if (push) {
+		await $`git -C ${dataDir} push`;
+	}
 }
