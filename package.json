@@ -1,0 +1,15 @@
+{
+  "name": "vixen-scrape",
+  "version": "1.0.0",
+  "type": "module",
+  "bin": {
+    "vixen-scrape": "./src/cli.ts"
+  },
+  "dependencies": {
+    "cheerio": "^1.0",
+    "commander": "^13",
+    "puppeteer": "^24",
+    "puppeteer-extra": "^3.3",
+    "puppeteer-extra-plugin-stealth": "^2.11"
+  }
+}
