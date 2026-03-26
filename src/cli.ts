@@ -30,10 +30,6 @@ program
 			quiet?: boolean;
 		}>();
 		setLevel(opts);
-	})
-	.action(async () => {
-		await program.parseAsync(["checkout"], { from: "user" });
-		await program.parseAsync(["scrape"], { from: "user" });
 	});
 
 program
@@ -48,6 +44,7 @@ program
 		if (!dataDir) {
 			program.error("--data or VIXEN_DATA_DIR is required");
 		}
+		await checkout(dataDir);
 		// Variable prevents Bun from resolving this at bundle time,
 		// keeping puppeteer out of the compiled binary
 		const mod = "./scrape.ts";
@@ -57,6 +54,16 @@ program
 
 const REPO = "git@github.com:libredmm/vixen_metadata.git";
 
+async function checkout(dataDir: string) {
+	if (existsSync(dataDir)) {
+		await $`git -C ${dataDir} pull --rebase`;
+	} else {
+		await $`git clone ${REPO} ${dataDir}`;
+	}
+	const lastUpdated = await $`git -C ${dataDir} log -1 --format=%cd`.text();
+	logger.info(`Last updated at: ${lastUpdated.trim()}`);
+}
+
 program
 	.command("checkout")
 	.description("Clone or update the vixen metadata repo")
@@ -65,13 +72,7 @@ program
 		if (!dataDir) {
 			program.error("--data or VIXEN_DATA_DIR is required");
 		}
-		if (existsSync(dataDir)) {
-			await $`git -C ${dataDir} pull --rebase`;
-		} else {
-			await $`git clone ${REPO} ${dataDir}`;
-		}
-		const lastUpdated = await $`git -C ${dataDir} log -1 --format=%cd`.text();
-		logger.info(`Last updated at: ${lastUpdated.trim()}`);
+		await checkout(dataDir);
 	});
 
 program
@@ -85,6 +86,7 @@ program
 			if (!dataDir) {
 				program.error("--data or VIXEN_DATA_DIR is required");
 			}
+			await checkout(dataDir);
 			for (const file of files) {
 				const name = await guessFilename(file, dataDir, options.site);
 				if (name) {
