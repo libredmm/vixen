@@ -8,6 +8,7 @@
   "dependencies": {
     "cheerio": "^1.0",
     "commander": "^13",
+    "consola": "^3.4.2",
     "puppeteer": "^24",
     "puppeteer-extra": "^3.3",
     "puppeteer-extra-plugin-stealth": "^2.11"

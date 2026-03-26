@@ -1,5 +1,5 @@
 import { join } from "node:path";
-import { vlog } from "./log.ts";
+import { logger } from "./log.ts";
 
 export async function compressSite(
   site: string,
@@ -15,7 +15,7 @@ export async function compressSite(
     (a, b) => Number(b.node.videoId) - Number(a.node.videoId),
   );
   await Bun.write(siteJson, JSON.stringify(entries, null, 2) + "\n");
-  vlog(`[${site}] JSON sorted: ${siteJson}`);
+  logger.debug(`[${site}] JSON sorted: ${siteJson}`);
 
   // Generate minified version
   const minEntries = entries.map((entry) => {
@@ -27,5 +27,5 @@ export async function compressSite(
     return clone;
   });
   await Bun.write(siteMinJson, JSON.stringify(minEntries, null, 2) + "\n");
-  vlog(`[${site}] Min JSON generated: ${siteMinJson}`);
+  logger.debug(`[${site}] Min JSON generated: ${siteMinJson}`);
 }

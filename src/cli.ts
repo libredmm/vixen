@@ -1,9 +1,9 @@
 #!/usr/bin/env -S bun run
 
-import { Command } from "commander";
+import { Command, Option } from "commander";
 import { createBrowser } from "./browser.ts";
 import { compressSite } from "./compress.ts";
-import { setVerbose } from "./log.ts";
+import { logger, setLevel } from "./log.ts";
 import { scrapeSite } from "./scraper.ts";
 import { discoverSites } from "./sites.ts";
 
@@ -14,7 +14,8 @@ program
   .description("Scrape video metadata from vixen sites")
   .argument("[sites...]", "Sites to scrape")
   .option("-c, --compress-only", "Compress only, skip scraping")
-  .option("-v, --verbose", "Enable verbose output")
+  .addOption(new Option("-v, --verbose", "Enable verbose output").conflicts("quiet"))
+  .addOption(new Option("-q, --quiet", "Suppress info messages").conflicts("verbose"))
   .option(
     "-o, --output <dir>",
     "Output directory",
@@ -22,14 +23,14 @@ program
   )
   .parse();
 
-const options = program.opts<{ compressOnly?: boolean; verbose?: boolean; output: string }>();
-if (options.verbose) setVerbose(true);
+const options = program.opts<{ compressOnly?: boolean; verbose?: boolean; quiet?: boolean; output: string }>();
+setLevel(options);
 const outputDir = options.output;
 
 let sites = program.args;
 if (sites.length === 0) {
   sites = await discoverSites(outputDir);
-  console.log(`No site specified, scraping all sites: ${sites.join(", ")}`);
+  logger.info(`No site specified, scraping all sites: ${sites.join(", ")}`);
 }
 
 if (!options.compressOnly) {

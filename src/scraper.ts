@@ -3,7 +3,7 @@ import { existsSync } from "node:fs";
 import { join } from "node:path";
 import type { Browser } from "puppeteer";
 import { fetchPage } from "./browser.ts";
-import { vlog } from "./log.ts";
+import { logger } from "./log.ts";
 
 const COOKIES = [{ name: "consent", value: "0" }];
 
@@ -12,7 +12,7 @@ export async function scrapeSite(
   site: string,
   outputDir: string,
 ): Promise<void> {
-  vlog(`[${site}] Start scraping`);
+  logger.debug(`[${site}] Start scraping`);
 
   const siteJson = join(outputDir, `${site}.json`);
   if (!existsSync(siteJson)) {
@@ -34,7 +34,7 @@ export async function scrapeSite(
   );
   const pageMatch = lastPageLink?.match(/page=(\d+)/);
   if (!pageMatch) {
-    console.error(`[${site}] Failed to get # of pages`);
+    logger.error(`[${site}] Failed to get # of pages`);
     return;
   }
   const totalPages = Number(pageMatch[1]);
@@ -43,7 +43,7 @@ export async function scrapeSite(
   const newEntries: any[] = [];
 
   for (let idx = 1; idx <= totalPages; idx++) {
-    vlog(`[${site}] Scraping page ${idx}/${totalPages}`);
+    logger.debug(`[${site}] Scraping page ${idx}/${totalPages}`);
 
     const html =
       idx === 1
@@ -57,7 +57,7 @@ export async function scrapeSite(
     const $ = load(html);
     const nextDataText = $("#__NEXT_DATA__").text();
     if (!nextDataText) {
-      console.error(`[${site}] No __NEXT_DATA__ on page ${idx}, skipping`);
+      logger.error(`[${site}] No __NEXT_DATA__ on page ${idx}, skipping`);
       continue;
     }
 
@@ -75,7 +75,7 @@ export async function scrapeSite(
     }
 
     if (dupCount > 0) {
-      vlog(
+      logger.debug(
         `[${site}] Found ${dupCount} duplicate(s) on page ${idx}/${totalPages}, stopping`,
       );
       break;
@@ -85,8 +85,8 @@ export async function scrapeSite(
   if (newEntries.length > 0) {
     const merged = [...newEntries, ...existing];
     await Bun.write(siteJson, JSON.stringify(merged, null, 2) + "\n");
-    console.log(`[${site}] Added ${newEntries.length} new video(s)`);
+    logger.success(`[${site}] Added ${newEntries.length} new video(s)`);
   } else {
-    console.log(`[${site}] No new videos found`);
+    logger.info(`[${site}] No new videos found`);
   }
 }

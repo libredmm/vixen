@@ -1,9 +1,8 @@
-export let verbose = false;
+import { createConsola, LogLevels } from "consola";
 
-export function setVerbose(v: boolean) {
-  verbose = v;
-}
+export const logger = createConsola({ level: LogLevels.info });
 
-export function vlog(msg: string) {
-  if (verbose) console.log(msg);
+export function setLevel(opts: { verbose?: boolean; quiet?: boolean }) {
+  if (opts.verbose) logger.level = LogLevels.debug;
+  if (opts.quiet) logger.level = LogLevels.warn;
 }
