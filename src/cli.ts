@@ -3,6 +3,7 @@
 import { existsSync } from "node:fs";
 import { $ } from "bun";
 import { Command, Option } from "commander";
+import { guessFilename } from "./guess.ts";
 import { logger, setLevel } from "./log.ts";
 
 const program = new Command();
@@ -72,5 +73,25 @@ program
 		const lastUpdated = await $`git -C ${dataDir} log -1 --format=%cd`.text();
 		logger.info(`Last updated at: ${lastUpdated.trim()}`);
 	});
+
+program
+	.command("guess")
+	.description("Guess the canonical filename for a video file")
+	.argument("<files...>", "Video files to guess names for")
+	.option("-s, --site <site>", "Override site detection")
+	.action(
+		async (files: string[], options: { site?: string }, command: Command) => {
+			const { data: dataDir } = command.optsWithGlobals<{ data: string }>();
+			if (!dataDir) {
+				program.error("--data or VIXEN_DATA_DIR is required");
+			}
+			for (const file of files) {
+				const name = await guessFilename(file, dataDir, options.site);
+				if (name) {
+					console.log(name);
+				}
+			}
+		},
+	);
 
 program.parse();
