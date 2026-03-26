@@ -56,9 +56,9 @@ const REPO = "git@github.com:libredmm/vixen_metadata.git";
 
 async function checkout(dataDir: string) {
 	if (existsSync(dataDir)) {
-		await $`git -C ${dataDir} pull --rebase`;
+		await $`git -C ${dataDir} pull --rebase`.quiet();
 	} else {
-		await $`git clone ${REPO} ${dataDir}`;
+		await $`git clone ${REPO} ${dataDir}`.quiet();
 	}
 	const lastUpdated = await $`git -C ${dataDir} log -1 --format=%cd`.text();
 	logger.info(`Last updated at: ${lastUpdated.trim()}`);
@@ -86,12 +86,17 @@ program
 			if (!dataDir) {
 				program.error("--data or VIXEN_DATA_DIR is required");
 			}
-			await checkout(dataDir);
+			let failed = false;
 			for (const file of files) {
 				const name = await guessFilename(file, dataDir, options.site);
 				if (name) {
 					console.log(name);
+				} else {
+					failed = true;
 				}
+			}
+			if (failed) {
+				process.exit(1);
 			}
 		},
 	);

@@ -38,7 +38,13 @@ function extractSite(filename: string): string | null {
 function extractDate(filename: string): string | null {
 	const match = filename.match(DATE_PATTERN);
 	if (!match) return null;
-	const parsed = new Date(match[0]);
+	// Normalize separators to dashes and expand 2-digit years
+	const parts = match[0].split(/[.-]/);
+	if (parts.length !== 3) return null;
+	if (parts[0].length === 2) {
+		parts[0] = `20${parts[0]}`;
+	}
+	const parsed = new Date(`${parts[0]}-${parts[1]}-${parts[2]}`);
 	if (Number.isNaN(parsed.getTime())) return null;
 	return parsed.toISOString().slice(0, 10);
 }
