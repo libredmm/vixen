@@ -1,23 +1,6 @@
 import { basename, join } from "node:path";
+import type { Ctx } from "./ctx.ts";
 import { logger } from "./log.ts";
-
-const SITES = [
-	"blackedraw",
-	"blacked",
-	"deeper",
-	"milfy",
-	"slayed",
-	"tushyraw",
-	"tushy",
-	"vixen",
-	"wifey",
-];
-
-// Longer names first so "blackedraw" matches before "blacked"
-const SITE_PATTERN = new RegExp(
-	`\\b(${SITES.join("|").replace(/raw/g, " ?raw")})\\b`,
-	"i",
-);
 
 const DATE_PATTERN = /\d+[.-]\d+[.-]\d+/;
 
@@ -29,8 +12,14 @@ interface VideoEntry {
 	};
 }
 
-function extractSite(filename: string): string | null {
-	const match = filename.match(SITE_PATTERN);
+function extractSite(filename: string, sites: string[]): string | null {
+	// Longer names first so "blackedraw" matches before "blacked"
+	const sorted = [...sites].sort((a, b) => b.length - a.length);
+	const pattern = new RegExp(
+		`\\b(${sorted.join("|").replace(/raw/g, " ?raw")})\\b`,
+		"i",
+	);
+	const match = filename.match(pattern);
 	if (!match) return null;
 	return match[1].replace(/ /g, "").toLowerCase();
 }
@@ -69,21 +58,21 @@ function buildFilename(site: string, entry: VideoEntry): string {
 }
 
 export async function guessFilename(
+	ctx: Ctx,
 	file: string,
-	dataDir: string,
 	site?: string,
 ): Promise<string | null> {
 	const filename = basename(file);
 
 	if (!site) {
-		site = extractSite(filename) ?? undefined;
+		site = extractSite(filename, ctx.sites) ?? undefined;
 	}
 	if (!site) {
 		logger.error(`No site found in ${filename}`);
 		return null;
 	}
 
-	const jsonPath = join(dataDir, `${site}.min.json`);
+	const jsonPath = join(ctx.dir, `${site}.min.json`);
 	const jsonFile = Bun.file(jsonPath);
 	if (!(await jsonFile.exists())) {
 		logger.error(`${jsonPath} does not exist`);

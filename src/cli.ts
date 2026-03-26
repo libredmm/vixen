@@ -3,6 +3,7 @@
 import { existsSync } from "node:fs";
 import { $ } from "bun";
 import { Command, Option } from "commander";
+import { createCtx } from "./ctx.ts";
 import { guessFilename } from "./guess.ts";
 import { logger, setLevel } from "./log.ts";
 
@@ -49,7 +50,8 @@ program
 		// keeping puppeteer out of the compiled binary
 		const mod = "./scrape.ts";
 		const { runScrape } = await import(mod);
-		await runScrape(dataDir, push, sites);
+		const ctx = await createCtx(dataDir);
+		await runScrape(ctx, push, sites);
 	});
 
 const REPO = "git@github.com:libredmm/vixen_metadata.git";
@@ -86,9 +88,10 @@ program
 			if (!dataDir) {
 				program.error("--data or VIXEN_DATA_DIR is required");
 			}
+			const ctx = await createCtx(dataDir);
 			let failed = false;
 			for (const file of files) {
-				const name = await guessFilename(file, dataDir, options.site);
+				const name = await guessFilename(ctx, file, options.site);
 				if (name) {
 					console.log(name);
 				} else {

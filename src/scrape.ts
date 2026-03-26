@@ -4,20 +4,20 @@ import { $ } from "bun";
 import { load } from "cheerio";
 import type { Browser } from "puppeteer";
 import { fetchPage } from "./browser.ts";
-import { compressSite } from "./compress.ts";
+import type { Ctx } from "./ctx.ts";
 import { logger } from "./log.ts";
-import { discoverSites } from "./sites.ts";
 
 const COOKIES = [{ name: "consent", value: "0" }];
 
 async function scrapeSite(
 	browser: Browser,
+	ctx: Ctx,
 	site: string,
-	outputDir: string,
 ): Promise<number> {
-	logger.debug(`[${site}] Start scraping`);
+	const tag = ctx.siteTag(site);
+	logger.debug(`${tag} Start scraping`);
 
-	const siteJson = join(outputDir, `${site}.json`);
+	const siteJson = join(ctx.dir, `${site}.json`);
 	if (!existsSync(siteJson)) {
 		await Bun.write(siteJson, "[]\n");
 	}
@@ -37,7 +37,7 @@ async function scrapeSite(
 	);
 	const pageMatch = lastPageLink?.match(/page=(\d+)/);
 	if (!pageMatch) {
-		logger.error(`[${site}] Failed to get # of pages`);
+		logger.error(`${tag} Failed to get # of pages`);
 		return 0;
 	}
 	const totalPages = Number(pageMatch[1]);
@@ -46,7 +46,7 @@ async function scrapeSite(
 	const newEntries: any[] = [];
 
 	for (let idx = 1; idx <= totalPages; idx++) {
-		logger.debug(`[${site}] Scraping page ${idx}/${totalPages}`);
+		logger.debug(`${tag} Scraping page ${idx}/${totalPages}`);
 
 		const html =
 			idx === 1
@@ -60,7 +60,7 @@ async function scrapeSite(
 		const $ = load(html);
 		const nextDataText = $("#__NEXT_DATA__").text();
 		if (!nextDataText) {
-			logger.error(`[${site}] No __NEXT_DATA__ on page ${idx}, skipping`);
+			logger.error(`${tag} No __NEXT_DATA__ on page ${idx}, skipping`);
 			continue;
 		}
 
@@ -79,7 +79,7 @@ async function scrapeSite(
 
 		if (dupCount > 0) {
 			logger.debug(
-				`[${site}] Found ${dupCount} duplicate(s) on page ${idx}/${totalPages}, stopping`,
+				`${tag} Found ${dupCount} duplicate(s) on page ${idx}/${totalPages}, stopping`,
 			);
 			break;
 		}
@@ -88,22 +88,47 @@ async function scrapeSite(
 	if (newEntries.length > 0) {
 		const merged = [...newEntries, ...existing];
 		await Bun.write(siteJson, `${JSON.stringify(merged, null, 2)}\n`);
-		logger.success(`[${site}] Added ${newEntries.length} new video(s)`);
+		logger.success(`${tag} Added ${newEntries.length} new video(s)`);
 	} else {
 		const lastDate = existing[0]?.node.releaseDate?.split("T")[0] ?? "unknown";
-		logger.info(`[${site}] Already up to date (${lastDate})`);
+		logger.info(`${tag} Already up to date (${lastDate})`);
 	}
 
 	return newEntries.length;
 }
 
+async function compressSite(ctx: Ctx, site: string): Promise<void> {
+	const tag = ctx.siteTag(site);
+	const siteJson = join(ctx.dir, `${site}.json`);
+	const siteMinJson = join(ctx.dir, `${site}.min.json`);
+
+	const entries: any[] = JSON.parse(await Bun.file(siteJson).text());
+
+	// Sort by videoId descending
+	entries.sort((a, b) => Number(b.node.videoId) - Number(a.node.videoId));
+	await Bun.write(siteJson, `${JSON.stringify(entries, null, 2)}\n`);
+	logger.debug(`${tag} JSON sorted: ${siteJson}`);
+
+	// Generate minified version
+	const minEntries = entries.map((entry) => {
+		const clone = structuredClone(entry);
+		delete clone.node.expertReview;
+		delete clone.node.previews;
+		delete clone.node.images;
+		delete clone.cursor;
+		return clone;
+	});
+	await Bun.write(siteMinJson, `${JSON.stringify(minEntries, null, 2)}\n`);
+	logger.debug(`${tag} Min JSON generated: ${siteMinJson}`);
+}
+
 export async function runScrape(
-	dataDir: string,
+	ctx: Ctx,
 	push: boolean,
 	sites: string[],
 ): Promise<void> {
 	if (sites.length === 0) {
-		sites = await discoverSites(dataDir);
+		sites = ctx.sites;
 		logger.info(`No site specified, scraping all sites: ${sites.join(", ")}`);
 	}
 
@@ -112,13 +137,13 @@ export async function runScrape(
 	let counts: number[];
 	try {
 		counts = await Promise.all(
-			sites.map((site) => scrapeSite(browser, site, dataDir)),
+			sites.map((site) => scrapeSite(browser, ctx, site)),
 		);
 	} finally {
 		await browser.close();
 	}
 
-	await Promise.all(sites.map((site) => compressSite(site, dataDir)));
+	await Promise.all(sites.map((site) => compressSite(ctx, site)));
 
 	// Commit and push if there are changes
 	const summary = sites
@@ -132,9 +157,9 @@ export async function runScrape(
 		return;
 	}
 
-	await $`git -C ${dataDir} add .`;
-	await $`git -C ${dataDir} commit -m ${`Update ${summary}`}`;
+	await $`git -C ${ctx.dir} add .`;
+	await $`git -C ${ctx.dir} commit -m ${`Update ${summary}`}`;
 	if (push) {
-		await $`git -C ${dataDir} push`;
+		await $`git -C ${ctx.dir} push`;
 	}
 }
