@@ -3,6 +3,7 @@ import { existsSync } from "node:fs";
 import { join } from "node:path";
 import type { Browser } from "puppeteer";
 import { fetchPage } from "./browser.ts";
+import { vlog } from "./log.ts";
 
 const COOKIES = [{ name: "consent", value: "0" }];
 
@@ -11,7 +12,7 @@ export async function scrapeSite(
   site: string,
   outputDir: string,
 ): Promise<void> {
-  console.error(`[${site}] Start scraping`);
+  vlog(`[${site}] Start scraping`);
 
   const siteJson = join(outputDir, `${site}.json`);
   if (!existsSync(siteJson)) {
@@ -42,7 +43,7 @@ export async function scrapeSite(
   const newEntries: any[] = [];
 
   for (let idx = 1; idx <= totalPages; idx++) {
-    console.error(`[${site}] Scraping page ${idx}/${totalPages}`);
+    vlog(`[${site}] Scraping page ${idx}/${totalPages}`);
 
     const html =
       idx === 1
@@ -74,7 +75,7 @@ export async function scrapeSite(
     }
 
     if (dupCount > 0) {
-      console.error(
+      vlog(
         `[${site}] Found ${dupCount} duplicate(s) on page ${idx}/${totalPages}, stopping`,
       );
       break;
@@ -84,8 +85,8 @@ export async function scrapeSite(
   if (newEntries.length > 0) {
     const merged = [...newEntries, ...existing];
     await Bun.write(siteJson, JSON.stringify(merged, null, 2) + "\n");
-    console.error(`[${site}] Added ${newEntries.length} new video(s)`);
+    console.log(`[${site}] Added ${newEntries.length} new video(s)`);
   } else {
-    console.error(`[${site}] No new videos found`);
+    console.log(`[${site}] No new videos found`);
   }
 }

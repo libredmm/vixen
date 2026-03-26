@@ -3,6 +3,7 @@
 import { Command } from "commander";
 import { createBrowser } from "./browser.ts";
 import { compressSite } from "./compress.ts";
+import { setVerbose } from "./log.ts";
 import { scrapeSite } from "./scraper.ts";
 import { discoverSites } from "./sites.ts";
 
@@ -13,6 +14,7 @@ program
   .description("Scrape video metadata from vixen sites")
   .argument("[sites...]", "Sites to scrape")
   .option("-c, --compress-only", "Compress only, skip scraping")
+  .option("-v, --verbose", "Enable verbose output")
   .option(
     "-o, --output <dir>",
     "Output directory",
@@ -20,13 +22,14 @@ program
   )
   .parse();
 
-const options = program.opts<{ compressOnly?: boolean; output: string }>();
+const options = program.opts<{ compressOnly?: boolean; verbose?: boolean; output: string }>();
+if (options.verbose) setVerbose(true);
 const outputDir = options.output;
 
 let sites = program.args;
 if (sites.length === 0) {
   sites = await discoverSites(outputDir);
-  console.error(`No site specified, scraping all sites: ${sites.join(", ")}`);
+  console.log(`No site specified, scraping all sites: ${sites.join(", ")}`);
 }
 
 if (!options.compressOnly) {
