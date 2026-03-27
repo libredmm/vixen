@@ -3,6 +3,7 @@
 import { existsSync } from "node:fs";
 import { $ } from "bun";
 import { Command, Option } from "commander";
+import pkg from "../package.json";
 import { createCtx } from "./ctx.ts";
 import { guessFilename } from "./guess.ts";
 import { logger, setLevel } from "./log.ts";
@@ -11,6 +12,7 @@ const program = new Command();
 
 program
 	.name("vixen")
+	.version(pkg.version)
 	.description("CLI for vixen video metadata")
 	.addOption(
 		new Option("-v, --verbose", "Enable verbose output").conflicts("quiet"),
