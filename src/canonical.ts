@@ -57,7 +57,7 @@ function buildFilename(site: string, entry: VideoEntry): string {
 	return titleCase(`${site} - ${date} - ${models}`);
 }
 
-export async function guessFilename(
+export async function canonicalFilename(
 	ctx: Ctx,
 	file: string,
 	site?: string,

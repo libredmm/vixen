@@ -4,8 +4,8 @@ import { existsSync } from "node:fs";
 import { $ } from "bun";
 import { Command, Option } from "commander";
 import pkg from "../package.json";
+import { canonicalFilename } from "./canonical.ts";
 import { createCtx } from "./ctx.ts";
-import { guessFilename } from "./guess.ts";
 import { logger, setLevel } from "./log.ts";
 
 const program = new Command();
@@ -44,7 +44,11 @@ program
 	.description("Scrape video metadata, compress, commit, and push")
 	.argument("[sites...]", "Sites to scrape")
 	.action(async (sites: string[], _options: object, command: Command) => {
-		const { data: dataDir, push, repo } = command.optsWithGlobals<{
+		const {
+			data: dataDir,
+			push,
+			repo,
+		} = command.optsWithGlobals<{
 			data: string;
 			push: boolean;
 			repo: string;
@@ -86,8 +90,8 @@ program
 	});
 
 program
-	.command("guess")
-	.description("Guess the canonical filename for a video file")
+	.command("canonical")
+	.description("Build the canonical filename for a video file")
 	.argument("<files...>", "Video files to guess names for")
 	.option("-s, --site <site>", "Override site detection")
 	.action(
@@ -99,7 +103,7 @@ program
 			const ctx = await createCtx(dataDir);
 			let failed = false;
 			for (const file of files) {
-				const name = await guessFilename(ctx, file, options.site);
+				const name = await canonicalFilename(ctx, file, options.site);
 				if (name) {
 					console.log(name);
 				} else {

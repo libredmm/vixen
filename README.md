@@ -16,8 +16,8 @@ Or: `just install` to do both.
 ```bash
 vixen checkout                    # clone or update the metadata repo
 vixen scrape [sites...]           # checkout, scrape, compress, commit, push (needs write access)
-vixen guess <files...>            # guess canonical filename
-vixen guess -s tushy <files...>   # override site detection
+vixen canonical <files...>            # build canonical filename
+vixen canonical -s tushy <files...>   # override site detection
 ```
 
 ### Global options
@@ -39,7 +39,7 @@ just deploy-linux <host>                 # deploys to ~/.local/bin/ by default
 just deploy-linux <host> /usr/local/bin  # custom remote path
 ```
 
-The compiled binary includes `checkout` and `guess` commands. `scrape` requires a full Bun environment with puppeteer.
+The compiled binary includes `checkout` and `canonical` commands. `scrape` requires a full Bun environment with puppeteer.
 
 ## Dev
 

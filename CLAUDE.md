@@ -12,7 +12,7 @@ Bun/TypeScript CLI that scrapes video metadata from vixen network sites. Replace
 just install                  # install deps + link global binary
 vixen checkout                # clone or update metadata repo
 vixen scrape [sites...]       # checkout, scrape, compress, commit, push
-vixen guess <files...>        # guess canonical filename
+vixen canonical <files...>    # build canonical filename
 ```
 
 Default data directory: `$XDG_DATA_HOME/vixen` (override with `--data`). Default metadata repo: `libredmm/vixen_metadata` (override with `--repo`).
@@ -27,7 +27,7 @@ Global flags: `-v`/`--verbose`, `-q`/`--quiet`, `-n`/`--no-push` (skip git push)
 
 ## Architecture
 
-- **cli.ts** — Entry point, Commander subcommands (`checkout`, `scrape`, `guess`). Scrape auto-checkouts first
+- **cli.ts** — Entry point, Commander subcommands (`checkout`, `scrape`, `canonical`). Scrape auto-checkouts first
 - **browser.ts** — Puppeteer-extra with StealthPlugin (absorbed from `purl` project). Single browser instance shared across all sites. `fetchPage()` creates a tab, sets cookies, navigates with `networkidle0`, returns HTML
 - **scrape.ts** — Per-site scrape + `runScrape` orchestrator. Lazy-loaded to keep puppeteer out of compiled binary
 - **guess.ts** — Looks up video in `.min.json` by date or 6-digit ID, builds canonical filename
