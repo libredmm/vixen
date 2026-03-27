@@ -13,6 +13,7 @@ async function scrapeSite(
 	browser: Browser,
 	ctx: Ctx,
 	site: string,
+	full?: boolean,
 ): Promise<number> {
 	const tag = ctx.siteTag(site);
 	logger.debug(`${tag} Start scraping`);
@@ -44,6 +45,7 @@ async function scrapeSite(
 
 	// Scrape pages, collecting new entries
 	const newEntries: any[] = [];
+	const updatedIds = new Set<string>();
 
 	for (let idx = 1; idx <= totalPages; idx++) {
 		logger.debug(`${tag} Scraping page ${idx}/${totalPages}`);
@@ -71,13 +73,17 @@ async function scrapeSite(
 		for (const entry of edges) {
 			if (existingIds.has(entry.node.videoId)) {
 				dupCount++;
+				if (full) {
+					updatedIds.add(entry.node.videoId);
+					newEntries.push(entry);
+				}
 			} else {
 				newEntries.push(entry);
 				existingIds.add(entry.node.videoId);
 			}
 		}
 
-		if (dupCount > 0) {
+		if (dupCount > 0 && !full) {
 			logger.debug(
 				`${tag} Found ${dupCount} duplicate(s) on page ${idx}/${totalPages}, stopping`,
 			);
@@ -86,9 +92,14 @@ async function scrapeSite(
 	}
 
 	if (newEntries.length > 0) {
-		const merged = [...newEntries, ...existing];
+		const kept = existing.filter((e) => !updatedIds.has(e.node.videoId));
+		const merged = [...newEntries, ...kept];
 		await Bun.write(siteJson, `${JSON.stringify(merged, null, 2)}\n`);
-		logger.success(`${tag} Added ${newEntries.length} new video(s)`);
+		const added = newEntries.length - updatedIds.size;
+		const parts: string[] = [];
+		if (added > 0) parts.push(`${added} new`);
+		if (updatedIds.size > 0) parts.push(`${updatedIds.size} updated`);
+		logger.success(`${tag} ${parts.join(", ")} video(s)`);
 	} else {
 		const lastDate = existing[0]?.node.releaseDate?.split("T")[0] ?? "unknown";
 		logger.info(`${tag} Already up to date (${lastDate})`);
@@ -113,6 +124,7 @@ export async function runScrape(
 	ctx: Ctx,
 	push: boolean,
 	sites: string[],
+	full?: boolean,
 ): Promise<void> {
 	if (sites.length === 0) {
 		sites = ctx.sites;
@@ -124,7 +136,7 @@ export async function runScrape(
 	let counts: number[];
 	try {
 		counts = await Promise.all(
-			sites.map((site) => scrapeSite(browser, ctx, site)),
+			sites.map((site) => scrapeSite(browser, ctx, site, full)),
 		);
 	} finally {
 		await browser.close();

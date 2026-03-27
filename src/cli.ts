@@ -25,7 +25,6 @@ program
 		"Data directory",
 		`${process.env.XDG_DATA_HOME ?? `${process.env.HOME}/.local/share`}/vixen`,
 	)
-	.option("-n, --no-push", "Skip git push after commit")
 	.option(
 		"-r, --repo <url>",
 		"Metadata repo URL",
@@ -43,27 +42,30 @@ program
 	.command("scrape")
 	.description("Scrape video metadata, compress, commit, and push")
 	.argument("[sites...]", "Sites to scrape")
-	.action(async (sites: string[], _options: object, command: Command) => {
-		const {
-			data: dataDir,
-			push,
-			repo,
-		} = command.optsWithGlobals<{
-			data: string;
-			push: boolean;
-			repo: string;
-		}>();
-		if (!dataDir) {
-			program.error("--data is required");
-		}
-		await checkout(dataDir, repo);
-		// Variable prevents Bun from resolving this at bundle time,
-		// keeping puppeteer out of the compiled binary
-		const mod = "./scrape.ts";
-		const { runScrape } = await import(mod);
-		const ctx = await createCtx(dataDir);
-		await runScrape(ctx, push, sites);
-	});
+	.option("-f, --full", "Scrape all pages without stopping on duplicates")
+	.option("-n, --no-push", "Skip git push after commit")
+	.action(
+		async (
+			sites: string[],
+			options: { full?: boolean; push: boolean },
+			command: Command,
+		) => {
+			const { data: dataDir, repo } = command.optsWithGlobals<{
+				data: string;
+				repo: string;
+			}>();
+			if (!dataDir) {
+				program.error("--data is required");
+			}
+			await checkout(dataDir, repo);
+			// Variable prevents Bun from resolving this at bundle time,
+			// keeping puppeteer out of the compiled binary
+			const mod = "./scrape.ts";
+			const { runScrape } = await import(mod);
+			const ctx = await createCtx(dataDir);
+			await runScrape(ctx, options.push, sites, options.full);
+		},
+	);
 
 async function checkout(dataDir: string, repo: string) {
 	if (existsSync(dataDir)) {

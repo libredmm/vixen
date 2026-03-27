@@ -27,8 +27,14 @@ vixen canonical -s tushy <files...>   # override site detection
 | `-d, --data <dir>` | Data directory (default: `$XDG_DATA_HOME/vixen`) |
 | `-v, --verbose` | Enable debug output |
 | `-q, --quiet` | Suppress info messages |
-| `-n, --no-push` | Skip git push after commit (useful without write access) |
 | `-r, --repo <url>` | Metadata repo URL (default: [`libredmm/vixen_metadata`](https://github.com/libredmm/vixen_metadata)) |
+
+### Scrape options
+
+| Flag | Description |
+|------|-------------|
+| `-f, --full` | Scrape all pages without stopping on duplicates |
+| `-n, --no-push` | Skip git push after commit |
 
 ## Deploy
 

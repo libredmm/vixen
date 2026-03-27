@@ -17,7 +17,7 @@ vixen canonical <files...>    # build canonical filename
 
 Default data directory: `$XDG_DATA_HOME/vixen` (override with `--data`). Default metadata repo: `libredmm/vixen_metadata` (override with `--repo`).
 
-Global flags: `-v`/`--verbose`, `-q`/`--quiet`, `-n`/`--no-push` (skip git push), `-r`/`--repo` (metadata repo URL). Deploy to Linux: `just deploy-linux <host>`.
+Global flags: `-v`/`--verbose`, `-q`/`--quiet`, `-r`/`--repo` (metadata repo URL). Scrape flags: `-f`/`--full` (no dedup stop), `-n`/`--no-push` (skip git push). Deploy to Linux: `just deploy-linux <host>`.
 
 ## Dev
 
