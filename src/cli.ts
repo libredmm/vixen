@@ -21,10 +21,14 @@ program
 	.option(
 		"-d, --data <dir>",
 		"Data directory",
-		process.env.VIXEN_DATA_DIR ??
-			`${process.env.XDG_DATA_HOME ?? `${process.env.HOME}/.local/share`}/vixen`,
+		`${process.env.XDG_DATA_HOME ?? `${process.env.HOME}/.local/share`}/vixen`,
 	)
 	.option("-n, --no-push", "Skip git push after commit")
+	.option(
+		"-r, --repo <url>",
+		"Metadata repo URL",
+		"git@github.com:libredmm/vixen_metadata.git",
+	)
 	.hook("preAction", (thisCommand) => {
 		const opts = thisCommand.optsWithGlobals<{
 			verbose?: boolean;
@@ -38,14 +42,15 @@ program
 	.description("Scrape video metadata, compress, commit, and push")
 	.argument("[sites...]", "Sites to scrape")
 	.action(async (sites: string[], _options: object, command: Command) => {
-		const { data: dataDir, push } = command.optsWithGlobals<{
+		const { data: dataDir, push, repo } = command.optsWithGlobals<{
 			data: string;
 			push: boolean;
+			repo: string;
 		}>();
 		if (!dataDir) {
-			program.error("--data or VIXEN_DATA_DIR is required");
+			program.error("--data is required");
 		}
-		await checkout(dataDir);
+		await checkout(dataDir, repo);
 		// Variable prevents Bun from resolving this at bundle time,
 		// keeping puppeteer out of the compiled binary
 		const mod = "./scrape.ts";
@@ -54,13 +59,11 @@ program
 		await runScrape(ctx, push, sites);
 	});
 
-const REPO = "git@github.com:libredmm/vixen_metadata.git";
-
-async function checkout(dataDir: string) {
+async function checkout(dataDir: string, repo: string) {
 	if (existsSync(dataDir)) {
 		await $`git -C ${dataDir} pull --rebase`.quiet();
 	} else {
-		await $`git clone ${REPO} ${dataDir}`.quiet();
+		await $`git clone ${repo} ${dataDir}`.quiet();
 	}
 	const lastUpdated = await $`git -C ${dataDir} log -1 --format=%cd`.text();
 	logger.info(`Last updated at: ${lastUpdated.trim()}`);
@@ -70,11 +73,14 @@ program
 	.command("checkout")
 	.description("Clone or update the vixen metadata repo")
 	.action(async (_options: object, command: Command) => {
-		const { data: dataDir } = command.optsWithGlobals<{ data: string }>();
+		const { data: dataDir, repo } = command.optsWithGlobals<{
+			data: string;
+			repo: string;
+		}>();
 		if (!dataDir) {
-			program.error("--data or VIXEN_DATA_DIR is required");
+			program.error("--data is required");
 		}
-		await checkout(dataDir);
+		await checkout(dataDir, repo);
 	});
 
 program
@@ -86,7 +92,7 @@ program
 		async (files: string[], options: { site?: string }, command: Command) => {
 			const { data: dataDir } = command.optsWithGlobals<{ data: string }>();
 			if (!dataDir) {
-				program.error("--data or VIXEN_DATA_DIR is required");
+				program.error("--data is required");
 			}
 			const ctx = await createCtx(dataDir);
 			let failed = false;
