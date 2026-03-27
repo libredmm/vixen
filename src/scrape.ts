@@ -97,10 +97,9 @@ async function scrapeSite(
 	return newEntries.length;
 }
 
-async function compressSite(ctx: Ctx, site: string): Promise<void> {
+async function sortSite(ctx: Ctx, site: string): Promise<void> {
 	const tag = ctx.siteTag(site);
 	const siteJson = join(ctx.dir, `${site}.json`);
-	const siteMinJson = join(ctx.dir, `${site}.min.json`);
 
 	const entries: any[] = JSON.parse(await Bun.file(siteJson).text());
 
@@ -108,18 +107,6 @@ async function compressSite(ctx: Ctx, site: string): Promise<void> {
 	entries.sort((a, b) => Number(b.node.videoId) - Number(a.node.videoId));
 	await Bun.write(siteJson, `${JSON.stringify(entries, null, 2)}\n`);
 	logger.debug(`${tag} JSON sorted: ${siteJson}`);
-
-	// Generate minified version
-	const minEntries = entries.map((entry) => {
-		const clone = structuredClone(entry);
-		delete clone.node.expertReview;
-		delete clone.node.previews;
-		delete clone.node.images;
-		delete clone.cursor;
-		return clone;
-	});
-	await Bun.write(siteMinJson, `${JSON.stringify(minEntries, null, 2)}\n`);
-	logger.debug(`${tag} Min JSON generated: ${siteMinJson}`);
 }
 
 export async function runScrape(
@@ -143,7 +130,7 @@ export async function runScrape(
 		await browser.close();
 	}
 
-	await Promise.all(sites.map((site) => compressSite(ctx, site)));
+	await Promise.all(sites.map((site) => sortSite(ctx, site)));
 
 	// Commit and push if there are changes
 	const summary = sites

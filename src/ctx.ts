@@ -9,7 +9,7 @@ export interface Ctx {
 export async function createCtx(dir: string): Promise<Ctx> {
 	const entries = await readdir(dir);
 	const sites = entries
-		.filter((f) => f.endsWith(".json") && !f.endsWith(".min.json"))
+		.filter((f) => f.endsWith(".json"))
 		.map((f) => f.replace(/\.json$/, ""));
 	const maxLen = Math.max(...sites.map((s) => s.length), 0);
 	return {

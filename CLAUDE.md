@@ -30,9 +30,8 @@ Global flags: `-v`/`--verbose`, `-q`/`--quiet`, `-n`/`--no-push` (skip git push)
 - **cli.ts** — Entry point, Commander subcommands (`checkout`, `scrape`, `canonical`). Scrape auto-checkouts first
 - **browser.ts** — Puppeteer-extra with StealthPlugin (absorbed from `purl` project). Single browser instance shared across all sites. `fetchPage()` creates a tab, sets cookies, navigates with `networkidle0`, returns HTML
 - **scrape.ts** — Per-site scrape + `runScrape` orchestrator. Lazy-loaded to keep puppeteer out of compiled binary
-- **guess.ts** — Looks up video in `.min.json` by date or 6-digit ID, builds canonical filename
-- **compress.ts** — Sorts entries by `videoId` descending, generates `.min.json` (strips `expertReview`, `previews`, `images`, `cursor`)
-- **sites.ts** — Auto-discovers sites from `*.json` files (excluding `*.min.json`) in output dir
+- **canonical.ts** — Looks up video in `.json` by date or 6-digit ID, builds canonical filename
+- **sites.ts** — Auto-discovers sites from `*.json` files in output dir
 - **log.ts** — Consola logger with verbosity levels (`-v` for debug, `-q` for warn-only)
 
 Sites are scraped in parallel (`Promise.all`), pages within a site are sequential (need dedup to decide when to stop).

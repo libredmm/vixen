@@ -72,7 +72,7 @@ export async function canonicalFilename(
 		return null;
 	}
 
-	const jsonPath = join(ctx.dir, `${site}.min.json`);
+	const jsonPath = join(ctx.dir, `${site}.json`);
 	const jsonFile = Bun.file(jsonPath);
 	if (!(await jsonFile.exists())) {
 		logger.error(`${jsonPath} does not exist`);
