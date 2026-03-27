@@ -9,14 +9,15 @@ Bun/TypeScript CLI that scrapes video metadata from vixen network sites. Replace
 ## Running
 
 ```bash
-just install                                   # install deps + link global binary
-export VIXEN_DATA_DIR=/path/to/data            # or --data; default: $XDG_DATA_HOME/vixen
-vixen checkout                                 # clone or update metadata repo
-vixen scrape [sites...]                        # checkout, scrape, compress, commit, push
-vixen guess <files...>                         # checkout, guess canonical filename
+just install                  # install deps + link global binary
+vixen checkout                # clone or update metadata repo
+vixen scrape [sites...]       # checkout, scrape, compress, commit, push
+vixen guess <files...>        # guess canonical filename
 ```
 
-Global flags: `-v`/`--verbose`, `-q`/`--quiet`, `-n`/`--no-push` (skip git push). Deploy to Linux: `just deploy-linux <host>`.
+Default data directory: `$XDG_DATA_HOME/vixen` (override with `--data`). Default metadata repo: `libredmm/vixen_metadata` (override with `--repo`).
+
+Global flags: `-v`/`--verbose`, `-q`/`--quiet`, `-n`/`--no-push` (skip git push), `-r`/`--repo` (metadata repo URL). Deploy to Linux: `just deploy-linux <host>`.
 
 ## Dev
 
@@ -26,7 +27,7 @@ Global flags: `-v`/`--verbose`, `-q`/`--quiet`, `-n`/`--no-push` (skip git push)
 
 ## Architecture
 
-- **cli.ts** — Entry point, Commander subcommands (`checkout`, `scrape`, `guess`). Scrape and guess auto-checkout first
+- **cli.ts** — Entry point, Commander subcommands (`checkout`, `scrape`, `guess`). Scrape auto-checkouts first
 - **browser.ts** — Puppeteer-extra with StealthPlugin (absorbed from `purl` project). Single browser instance shared across all sites. `fetchPage()` creates a tab, sets cookies, navigates with `networkidle0`, returns HTML
 - **scrape.ts** — Per-site scrape + `runScrape` orchestrator. Lazy-loaded to keep puppeteer out of compiled binary
 - **guess.ts** — Looks up video in `.min.json` by date or 6-digit ID, builds canonical filename
