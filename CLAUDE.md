@@ -9,7 +9,7 @@ Bun/TypeScript CLI that scrapes video metadata from vixen network sites. Replace
 ## Running
 
 ```bash
-just install                  # install deps + link global binary
+just install                  # install deps + link global binary + zsh completions
 vixen checkout                # clone or update metadata repo
 vixen scrape [sites...]       # checkout, scrape, compress, commit, push
 vixen canonical <files...>    # build canonical filename
@@ -23,6 +23,7 @@ Global flags: `-v`/`--verbose`, `-q`/`--quiet`, `-r`/`--repo` (metadata repo URL
 
 - `just check` — tsc + biome
 - `just fix` — biome auto-fix
+- `just install-completions` — symlink zsh completions to `~/.local/share/zsh/site-functions/`
 - Biome uses tabs, double quotes, recommended rules
 
 ## Architecture
@@ -33,6 +34,7 @@ Global flags: `-v`/`--verbose`, `-q`/`--quiet`, `-r`/`--repo` (metadata repo URL
 - **canonical.ts** — Looks up video in `.json` by date or 6-digit ID, builds canonical filename
 - **ctx.ts** — `SITES` predefined list + auto-discovers additional sites from `*.json` files in output dir
 - **log.ts** — Consola logger with verbosity levels (`-v` for debug, `-q` for warn-only)
+- **completions/_vixen** — Zsh completion for commands, flags, and site names
 
 Sites are scraped in parallel (`Promise.all`), pages within a site are sequential (need dedup to decide when to stop).
 

@@ -1,0 +1,52 @@
+#compdef vixen
+
+_vixen() {
+	local -a commands=(
+		'scrape:Scrape video metadata, compress, commit, and push'
+		'checkout:Clone or update the vixen metadata repo'
+		'canonical:Build the canonical filename for a video file'
+		'help:Display help for command'
+	)
+
+	_arguments -C \
+		'(-q --quiet)-v[Enable verbose output]' \
+		'(-q --quiet)--verbose[Enable verbose output]' \
+		'(-v --verbose)-q[Suppress info messages]' \
+		'(-v --verbose)--quiet[Suppress info messages]' \
+		'-d[Data directory]:dir:_directories' \
+		'--data[Data directory]:dir:_directories' \
+		'-r[Metadata repo URL]:url' \
+		'--repo[Metadata repo URL]:url' \
+		'--version[Show version]' \
+		'(-h --help)'{-h,--help}'[Show help]' \
+		'1:command:->command' \
+		'*::arg:->args'
+
+	case $state in
+		command) _describe 'command' commands ;;
+		args)
+			case $words[1] in
+				scrape)
+					_arguments \
+						'(-f --full)'{-f,--full}'[Scrape all pages without stopping on duplicates]' \
+						'(-n --no-push)'{-n,--no-push}'[Skip git push after commit]' \
+						'(-h --help)'{-h,--help}'[Show help]' \
+						'*:site:->sites'
+					[[ $state == sites ]] && _values 'site' blacked blackedraw deeper milfy slayed tushy tushyraw vixen wifey
+					;;
+				canonical)
+					_arguments \
+						'(-s --site)'{-s,--site}'[Override site detection]:site:->sites' \
+						'(-h --help)'{-h,--help}'[Show help]' \
+						'*:file:_files'
+					[[ $state == sites ]] && _values 'site' blacked blackedraw deeper milfy slayed tushy tushyraw vixen wifey
+					;;
+				checkout)
+					_arguments '(-h --help)'{-h,--help}'[Show help]'
+					;;
+			esac
+			;;
+	esac
+}
+
+_vixen "$@"
