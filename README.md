@@ -36,16 +36,27 @@ vixen canonical -s tushy <files...>   # override site detection
 | `-f, --full` | Scrape all pages without stopping on duplicates |
 | `-n, --no-push` | Skip git push after commit |
 
-## Deploy
+## Build
 
-Build a standalone binary and deploy to a remote Linux host:
+Compile a standalone binary for deployment to a machine without a Bun install:
 
 ```bash
-just deploy-linux <host>                 # deploys to ~/.local/bin/ by default
-just deploy-linux <host> /usr/local/bin  # custom remote path
+bun build ./src/cli.ts --compile --target=bun-linux-x64 \
+  --packages=bundle --outfile=dist/vixen
 ```
 
-The compiled binary includes `checkout` and `canonical` commands. `scrape` requires a full Bun environment with puppeteer.
+`--packages=bundle` inlines the `node_modules` dependencies; without it the binary still
+expects them at runtime. Swap `--target` for another [Bun target](https://bun.sh/docs/bundler/executables#supported-targets)
+(`bun-linux-arm64`, `bun-darwin-arm64`, …) to cross-compile; omit it to build for the host.
+
+Copy the result wherever it needs to run:
+
+```bash
+scp -O dist/vixen <host>:~/.local/bin/
+```
+
+The compiled binary covers `checkout` and `canonical`. `scrape` is not usable from it —
+it needs a full Bun environment with puppeteer.
 
 ## Dev
 
