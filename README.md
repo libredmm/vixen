@@ -55,8 +55,9 @@ Copy the result wherever it needs to run:
 scp -O dist/vixen <host>:~/.local/bin/
 ```
 
-The compiled binary covers `checkout` and `canonical`. `scrape` is not usable from it —
-it needs a full Bun environment with puppeteer.
+The compiled binary covers `checkout` and `canonical`. `scrape` needs a full Bun
+environment with puppeteer, so the binary hides it from `--help` and errors out if it is
+invoked anyway.
 
 ## Dev
 

@@ -10,6 +10,10 @@ import { logger, setLevel } from "./log.ts";
 
 const program = new Command();
 
+// Bun rewrites import.meta.url to a virtual $bunfs path inside a compiled
+// binary, where puppeteer was deliberately left unbundled — so scrape can't run
+const standalone = import.meta.url.includes("$bunfs");
+
 program
 	.name("vixen")
 	.version(pkg.version)
@@ -38,34 +42,48 @@ program
 		setLevel(opts);
 	});
 
-program
-	.command("scrape")
-	.description("Scrape video metadata, compress, commit, and push")
-	.argument("[sites...]", "Sites to scrape")
-	.option("-f, --full", "Scrape all pages without stopping on duplicates")
-	.option("-n, --no-push", "Skip git push after commit")
-	.action(
-		async (
-			sites: string[],
-			options: { full?: boolean; push: boolean },
-			command: Command,
-		) => {
-			const { data: dataDir, repo } = command.optsWithGlobals<{
-				data: string;
-				repo: string;
-			}>();
-			if (!dataDir) {
-				program.error("--data is required");
-			}
-			await checkout(dataDir, repo);
-			// Variable prevents Bun from resolving this at bundle time,
-			// keeping puppeteer out of the compiled binary
-			const mod = "./scrape.ts";
-			const { runScrape } = await import(mod);
-			const ctx = await createCtx(dataDir);
-			await runScrape(ctx, options.push, sites, options.full);
-		},
-	);
+if (standalone) {
+	// Keep the command registered so `vixen scrape` explains itself instead of
+	// failing with "unknown command", but hide it from help and completions
+	program
+		.command("scrape", { hidden: true })
+		.allowUnknownOption()
+		.argument("[args...]")
+		.action(() => {
+			program.error(
+				"error: scrape is unavailable in the standalone binary; it needs a Bun environment with puppeteer",
+			);
+		});
+} else {
+	program
+		.command("scrape")
+		.description("Scrape video metadata, compress, commit, and push")
+		.argument("[sites...]", "Sites to scrape")
+		.option("-f, --full", "Scrape all pages without stopping on duplicates")
+		.option("-n, --no-push", "Skip git push after commit")
+		.action(
+			async (
+				sites: string[],
+				options: { full?: boolean; push: boolean },
+				command: Command,
+			) => {
+				const { data: dataDir, repo } = command.optsWithGlobals<{
+					data: string;
+					repo: string;
+				}>();
+				if (!dataDir) {
+					program.error("--data is required");
+				}
+				await checkout(dataDir, repo);
+				// Variable prevents Bun from resolving this at bundle time,
+				// keeping puppeteer out of the compiled binary
+				const mod = "./scrape.ts";
+				const { runScrape } = await import(mod);
+				const ctx = await createCtx(dataDir);
+				await runScrape(ctx, options.push, sites, options.full);
+			},
+		);
+}
 
 async function checkout(dataDir: string, repo: string) {
 	if (existsSync(dataDir)) {
