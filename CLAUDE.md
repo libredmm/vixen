@@ -31,7 +31,7 @@ Global flags: `-v`/`--verbose`, `-q`/`--quiet`, `-r`/`--repo` (metadata repo URL
 - **cli.ts** — Entry point, Commander subcommands (`checkout`, `scrape`, `canonical`). Scrape auto-checkouts first
 - **browser.ts** — Puppeteer-extra with StealthPlugin (absorbed from `purl` project). Single browser instance shared across all sites. `fetchPage()` creates a tab, sets cookies, navigates with `networkidle0`, returns HTML
 - **scrape.ts** — Per-site scrape + `runScrape` orchestrator. Lazy-loaded to keep puppeteer out of compiled binary
-- **canonical.ts** — Looks up video in `.json` by date or 6-digit ID, builds canonical filename
+- **canonical.ts** — Looks up video in `.json` by date or 6-digit ID (ID disambiguates date collisions), builds canonical filename ending in ` [videoId]`
 - **ctx.ts** — `SITES` predefined list + auto-discovers additional sites from `*.json` files in output dir
 - **log.ts** — Consola logger with verbosity levels (`-v` for debug, `-q` for warn-only)
 - **completions/_vixen** — Zsh completion for commands, flags, and site names

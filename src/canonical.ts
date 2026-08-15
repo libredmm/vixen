@@ -47,14 +47,30 @@ function titleCase(s: string): string {
 	return s.replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
+function joinModels(names: string[]): string {
+	return names.length > 1
+		? `${names.slice(0, -1).join(", ")} & ${names[names.length - 1]}`
+		: (names[0] ?? "Unknown");
+}
+
+function formatModels(entry: VideoEntry): string {
+	return joinModels(entry.node.modelsSlugged.map((m) => m.name));
+}
+
+// Keep basename + ".mp4" within the 255-byte filesystem limit
+const MAX_BASENAME = 251;
+
 function buildFilename(site: string, entry: VideoEntry): string {
 	const date = entry.node.releaseDate.slice(0, 10);
-	const names = entry.node.modelsSlugged.map((m) => m.name);
-	const models =
-		names.length > 1
-			? `${names.slice(0, -1).join(", ")} & ${names[names.length - 1]}`
-			: (names[0] ?? "Unknown");
-	return titleCase(`${site} - ${date} - ${models}`);
+	let names = entry.node.modelsSlugged.map((m) => m.name);
+	let models = joinModels(names);
+	while (names.length > 1) {
+		const name = `${titleCase(`${site} - ${date} - ${models}`)} [${entry.node.videoId}]`;
+		if (Buffer.byteLength(name) <= MAX_BASENAME) return name;
+		names = names.slice(0, -1);
+		models = `${names.join(", ")} et al`;
+	}
+	return `${titleCase(`${site} - ${date} - ${models}`)} [${entry.node.videoId}]`;
 }
 
 export async function canonicalFilename(
@@ -82,17 +98,32 @@ export async function canonicalFilename(
 	const entries: VideoEntry[] = JSON.parse(await jsonFile.text());
 
 	const date = extractDate(filename);
+	const id = extractId(filename);
 	let entry: VideoEntry | undefined;
 
 	if (date) {
-		entry = entries.find((e) => e.node.releaseDate.startsWith(date));
-	} else {
-		const id = extractId(filename);
-		if (!id) {
-			logger.error(`No date or ID found in ${filename}`);
-			return null;
+		const candidates = entries.filter((e) =>
+			e.node.releaseDate.startsWith(date),
+		);
+		if (candidates.length > 1) {
+			entry = id ? candidates.find((e) => e.node.videoId === id) : undefined;
+			if (!entry) {
+				logger.error(
+					`Multiple videos on ${date} for ${filename}; put the 6-digit ID in the filename to disambiguate:`,
+				);
+				for (const c of candidates) {
+					logger.error(`  ${c.node.videoId}: ${formatModels(c)}`);
+				}
+				return null;
+			}
+		} else {
+			entry = candidates[0];
 		}
+	} else if (id) {
 		entry = entries.find((e) => e.node.videoId === id);
+	} else {
+		logger.error(`No date or ID found in ${filename}`);
+		return null;
 	}
 
 	if (!entry) {
