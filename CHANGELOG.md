@@ -1,5 +1,18 @@
 # Changelog
 
+## v0.0.5 - 2026-08-23
+
+### Features
+- Embed `[videoId]` in the canonical filename
+- Hide the `scrape` command in the standalone binary
+
+### Docs
+- Document the standalone build instead of a deploy recipe
+- Backfill changelog for v0.0.1 through v0.0.3
+
+### Chores
+- Populate GitHub release notes from `CHANGELOG.md`
+
 ## v0.0.4 - 2026-07-20
 
 ### Chores
