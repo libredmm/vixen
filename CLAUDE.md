@@ -33,7 +33,7 @@ Global flags: `-v`/`--verbose`, `-q`/`--quiet`, `-r`/`--repo` (metadata repo URL
 - **scrape.ts** — Per-site scrape + `runScrape` orchestrator. Lazy-loaded to keep puppeteer out of compiled binary
 - **canonical.ts** — Looks up video in `.json` by date or 6-digit ID (ID disambiguates date collisions), builds canonical filename ending in ` [videoId]`
 - **ctx.ts** — `SITES` predefined list + auto-discovers additional sites from `*.json` files in output dir
-- **log.ts** — Consola logger with verbosity levels (`-v` for debug, `-q` for warn-only)
+- **log.ts** — Minimal stderr logger with verbosity levels (`-v` for debug, `-q` for warn-only); colors only on a TTY and when `NO_COLOR` is unset
 - **completions/_vixen** — Zsh completion for commands, flags, and site names
 
 Sites are scraped in parallel (`Promise.all`), pages within a site are sequential (need dedup to decide when to stop).
