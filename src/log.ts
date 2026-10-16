@@ -15,11 +15,14 @@ const COLORS: Record<string, string> = {
 };
 const RESET = "\x1b[0m";
 
+// All levels go to stderr so stdout stays clean for command output (e.g. canonical)
+const stream = process.stderr;
+const useColor = stream.isTTY && !process.env.NO_COLOR;
+
 function log(level: Level, tag: string, msg: string) {
 	if (level < logger.level) return;
-	const color = COLORS[tag] ?? "";
-	const stream = level >= Level.warn ? process.stderr : process.stderr;
-	stream.write(`${color}[${tag}]${RESET} ${msg}\n`);
+	const label = useColor ? `${COLORS[tag] ?? ""}[${tag}]${RESET}` : `[${tag}]`;
+	stream.write(`${label} ${msg}\n`);
 }
 
 export const logger = {
