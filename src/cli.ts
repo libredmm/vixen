@@ -158,9 +158,11 @@ program
 			const ctx = await createCtx(dataDir);
 			let failed = false;
 			for (const file of files) {
-				if (!(await writeNfo(ctx, file, options).catch(() => false))) {
-					failed = true;
-				}
+				const ok = await writeNfo(ctx, file, options).catch((err) => {
+					logger.error(`${file}: ${err}`);
+					return false;
+				});
+				if (!ok) failed = true;
 			}
 			if (failed) {
 				process.exit(1);

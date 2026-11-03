@@ -83,10 +83,11 @@ function formatModels(entry: VideoEntry): string {
 	return joinModels(entry.node.modelsSlugged.map((m) => m.name));
 }
 
-// Keep basename + ".mp4" within the 255-byte filesystem limit
-const MAX_BASENAME = 251;
+// Keep every file named after the video within the 255-byte filesystem limit;
+// the longest is the "<name>-fanart.jpg" artwork that `vixen nfo` writes
+export const MAX_BASENAME = 255 - Buffer.byteLength("-fanart.jpg");
 
-function buildFilename(site: string, entry: VideoEntry): string {
+export function buildFilename(site: string, entry: VideoEntry): string {
 	const date = entry.node.releaseDate.slice(0, 10);
 	let names = entry.node.modelsSlugged.map((m) => m.name);
 	let models = joinModels(names);

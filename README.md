@@ -33,7 +33,7 @@ vixen nfo -n <files...>               # dry run
 
 ### Plex metadata
 
-`vixen nfo` matches each canonically named video (by its `[videoId]`, else by date) and writes what Plex's built-in NFO agent reads from a flat folder: `<name>.nfo` (title, release date, studio, site collection, cast), `<name>.jpg` (portrait poster) and `<name>-fanart.jpg` (widest landscape still). The `.nfo` is rewritten only when it changes; images are downloaded only when missing, and kept only if they are JPEGs.
+`vixen nfo` matches each canonically named video (by its `[videoId]`, else by date) and writes what Plex's built-in NFO agent reads from a flat folder: `<name>.nfo` (title, release date, studio, site collection, cast), `<name>.jpg` (portrait poster) and `<name>-fanart.jpg` (widest landscape still). The `.nfo` is rewritten only when it changes; images are downloaded only when missing, and kept only if they are JPEGs. A file that can't be written fails the run with exit 1; canonical names stay short enough that `<name>-fanart.jpg` fits the 255-byte name limit.
 
 ### Scrape options
 

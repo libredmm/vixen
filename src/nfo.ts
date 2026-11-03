@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { rename, rm } from "node:fs/promises";
 import { basename, dirname, extname, join } from "node:path";
 import { findEntry, type VideoEntry, type VideoImage } from "./canonical.ts";
@@ -57,8 +58,22 @@ export function pickImages(entry: VideoEntry): {
 
 const JPEG_MAGIC = [0xff, 0xd8, 0xff];
 
-// Writes through a temp name so an interrupted or bad download never leaves a
-// file behind that would block the next run's retry
+// Writes through a short hidden temp name in the same folder, then renames:
+// an interrupted write never leaves a file that would block the next run, and
+// the temp name never runs past the filesystem's name limit
+async function writeAtomic(dest: string, data: string | Uint8Array) {
+	const tmp = join(dirname(dest), `.vixen-${randomUUID().slice(0, 8)}.tmp`);
+	try {
+		await Bun.write(tmp, data);
+		await rename(tmp, dest);
+	} catch (err) {
+		await rm(tmp, { force: true });
+		throw err;
+	}
+}
+
+// HTTP errors and non-JPEG responses are warnings, retried on the next run;
+// filesystem errors throw
 async function download(url: string, dest: string): Promise<boolean> {
 	const res = await fetch(url);
 	if (!res.ok) {
@@ -70,12 +85,7 @@ async function download(url: string, dest: string): Promise<boolean> {
 		logger.warn(`${basename(dest)}: not a JPEG: ${url}`);
 		return false;
 	}
-	const tmp = `${dest}.tmp`;
-	await Bun.write(tmp, bytes);
-	await rename(tmp, dest).catch(async (err) => {
-		await rm(tmp, { force: true });
-		throw err;
-	});
+	await writeAtomic(dest, bytes);
 	return true;
 }
 
@@ -84,8 +94,8 @@ async function isCurrent(dest: string, content: string): Promise<boolean> {
 	return (await file.exists()) && (await file.text()) === content;
 }
 
-// Returns false when the file couldn't be matched or its metadata not written;
-// a missing image is only a warning, retried on the next run
+// Returns false when the file couldn't be matched or a file couldn't be
+// written; an image the site doesn't serve is only a warning
 export async function writeNfo(
 	ctx: Ctx,
 	file: string,
@@ -96,14 +106,19 @@ export async function writeNfo(
 	const base = join(dirname(file), basename(file, extname(file)));
 	const name = basename(base);
 
+	let ok = true;
 	const nfo = renderNfo(found.site, found.entry);
 	if (!(await isCurrent(`${base}.nfo`, nfo))) {
 		if (options.dryRun) {
 			logger.info(`${name}: would write .nfo`);
 		} else {
-			await Bun.write(`${base}.nfo.tmp`, nfo);
-			await rename(`${base}.nfo.tmp`, `${base}.nfo`);
-			logger.success(`${name}.nfo`);
+			try {
+				await writeAtomic(`${base}.nfo`, nfo);
+				logger.success(`${name}.nfo`);
+			} catch (err) {
+				logger.error(`${name}.nfo: ${err}`);
+				ok = false;
+			}
 		}
 	}
 
@@ -116,9 +131,14 @@ export async function writeNfo(
 		if (!url || (await Bun.file(dest).exists())) continue;
 		if (options.dryRun) {
 			logger.info(`${name}: would download ${suffix}`);
-		} else if (await download(url, dest).catch(() => false)) {
-			logger.success(`${name}${suffix}`);
+		} else {
+			try {
+				if (await download(url, dest)) logger.success(`${name}${suffix}`);
+			} catch (err) {
+				logger.error(`${name}${suffix}: ${err}`);
+				ok = false;
+			}
 		}
 	}
-	return true;
+	return ok;
 }
