@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.0.7 - 2026-11-02
+
+### Fixes
+- `vixen nfo` writes `<year>` so Plex's NFO agent sets the release year
+- `vixen nfo` reports files it can't write and exits 1 instead of passing silently
+- Cap canonical names at 244 bytes so `<name>-fanart.jpg` fits the 255-byte limit
+
 ## v0.0.6 - 2026-11-02
 
 ### Features
