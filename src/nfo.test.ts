@@ -37,6 +37,7 @@ test("renderNfo maps the scene and escapes text", () => {
 	expect(nfo).toContain(
 		"<title>BLACKED RAW - Working &lt;It&gt; &amp; More</title>",
 	);
+	expect(nfo).toContain("<year>2016</year>");
 	expect(nfo).toContain("<premiered>2016-07-23</premiered>");
 	expect(nfo).toContain("<studio>BLACKED RAW</studio>");
 	expect(nfo).toContain("<set>\n    <name>BLACKED RAW</name>\n  </set>");

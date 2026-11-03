@@ -23,6 +23,7 @@ export function renderNfo(site: string, entry: VideoEntry): string {
 		'<?xml version="1.0" encoding="UTF-8"?>',
 		"<movie>",
 		`  <title>${xml(`${studio} - ${node.title}`)}</title>`,
+		`  <year>${node.releaseDate.slice(0, 4)}</year>`,
 		`  <premiered>${node.releaseDate.slice(0, 10)}</premiered>`,
 		`  <studio>${xml(studio)}</studio>`,
 		`  <set>\n    <name>${xml(studio)}</name>\n  </set>`,
