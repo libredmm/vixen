@@ -1,5 +1,16 @@
 # Changelog
 
+## v0.0.6 - 2026-11-02
+
+### Features
+- Add `vixen nfo` to write Plex NFO metadata and artwork beside canonically named videos
+
+### Fixes
+- Skip ANSI colors in logs when stderr isn't a TTY or `NO_COLOR` is set
+
+### Docs
+- Describe the minimal logger instead of Consola
+
 ## v0.0.5 - 2026-08-23
 
 ### Features
