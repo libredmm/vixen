@@ -12,6 +12,16 @@ export const SITES = [
 	"wifey",
 ];
 
+// How each network site brands itself; unknown sites fall back to uppercase
+const SITE_NAMES: Record<string, string> = {
+	blackedraw: "BLACKED RAW",
+	tushyraw: "TUSHY RAW",
+};
+
+export function siteName(site: string): string {
+	return SITE_NAMES[site] ?? site.toUpperCase();
+}
+
 export interface Ctx {
 	dir: string;
 	sites: string[];

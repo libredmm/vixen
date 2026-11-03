@@ -13,6 +13,7 @@ just install                  # install deps + link global binary + zsh completi
 vixen checkout                # clone or update metadata repo
 vixen scrape [sites...]       # checkout, scrape, compress, commit, push
 vixen canonical <files...>    # build canonical filename
+vixen nfo <files...>          # write Plex .nfo + artwork beside videos
 ```
 
 Default data directory: `$XDG_DATA_HOME/vixen` (override with `--data`). Default metadata repo: `libredmm/vixen_metadata` (override with `--repo`).
@@ -22,16 +23,18 @@ Global flags: `-v`/`--verbose`, `-q`/`--quiet`, `-r`/`--repo` (metadata repo URL
 ## Dev
 
 - `just check` — tsc + biome
+- `just test` — `bun test` (`src/*.test.ts`)
 - `just fix` — biome auto-fix
 - `just install-completions` — symlink zsh completions to `~/.local/share/zsh/site-functions/`
 - Biome uses tabs, double quotes, recommended rules
 
 ## Architecture
 
-- **cli.ts** — Entry point, Commander subcommands (`checkout`, `scrape`, `canonical`). Scrape auto-checkouts first
+- **cli.ts** — Entry point, Commander subcommands (`checkout`, `scrape`, `canonical`, `nfo`). Scrape auto-checkouts first
 - **browser.ts** — Puppeteer-extra with StealthPlugin (absorbed from `purl` project). Single browser instance shared across all sites. `fetchPage()` creates a tab, sets cookies, navigates with `networkidle0`, returns HTML
 - **scrape.ts** — Per-site scrape + `runScrape` orchestrator. Lazy-loaded to keep puppeteer out of compiled binary
-- **canonical.ts** — Looks up video in `.json` by date or 6-digit ID (ID disambiguates date collisions), builds canonical filename ending in ` [videoId]`
+- **canonical.ts** — Looks up video in `.json` by date or 6-digit ID (ID disambiguates date collisions), builds canonical filename ending in ` [videoId]` (`findEntry` is the shared matcher; site files are parsed once per process)
+- **nfo.ts** — Writes `<name>.nfo`, `<name>.jpg` (poster), `<name>-fanart.jpg` beside each video for Plex's stock NFO agent; site display names come from `siteName()` in ctx.ts
 - **ctx.ts** — `SITES` predefined list + auto-discovers additional sites from `*.json` files in output dir
 - **log.ts** — Minimal stderr logger with verbosity levels (`-v` for debug, `-q` for warn-only); colors only on a TTY and when `NO_COLOR` is unset
 - **completions/_vixen** — Zsh completion for commands, flags, and site names

@@ -18,6 +18,8 @@ vixen checkout                    # clone or update the metadata repo
 vixen scrape [sites...]           # checkout, scrape, compress, commit, push (needs write access)
 vixen canonical <files...>            # build canonical filename
 vixen canonical -s tushy <files...>   # override site detection
+vixen nfo <files...>                  # write Plex NFO metadata + artwork beside each video
+vixen nfo -n <files...>               # dry run
 ```
 
 ### Global options
@@ -28,6 +30,10 @@ vixen canonical -s tushy <files...>   # override site detection
 | `-v, --verbose` | Enable debug output |
 | `-q, --quiet` | Suppress info messages |
 | `-r, --repo <url>` | Metadata repo URL (default: [`libredmm/vixen_metadata`](https://github.com/libredmm/vixen_metadata)) |
+
+### Plex metadata
+
+`vixen nfo` matches each canonically named video (by its `[videoId]`, else by date) and writes what Plex's built-in NFO agent reads from a flat folder: `<name>.nfo` (title, release date, studio, site collection, cast), `<name>.jpg` (portrait poster) and `<name>-fanart.jpg` (widest landscape still). The `.nfo` is rewritten only when it changes; images are downloaded only when missing, and kept only if they are JPEGs.
 
 ### Scrape options
 
@@ -55,7 +61,7 @@ Copy the result wherever it needs to run:
 scp -O dist/vixen <host>:~/.local/bin/
 ```
 
-The compiled binary covers `checkout` and `canonical`. `scrape` needs a full Bun
+The compiled binary covers `checkout`, `canonical`, and `nfo`. `scrape` needs a full Bun
 environment with puppeteer, so the binary hides it from `--help` and errors out if it is
 invoked anyway.
 

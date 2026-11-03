@@ -7,6 +7,7 @@ import pkg from "../package.json";
 import { canonicalFilename } from "./canonical.ts";
 import { createCtx } from "./ctx.ts";
 import { logger, setLevel } from "./log.ts";
+import { writeNfo } from "./nfo.ts";
 
 const program = new Command();
 
@@ -127,6 +128,37 @@ program
 				if (name) {
 					console.log(name);
 				} else {
+					failed = true;
+				}
+			}
+			if (failed) {
+				process.exit(1);
+			}
+		},
+	);
+
+program
+	.command("nfo")
+	.description(
+		"Write Plex NFO metadata and artwork next to canonically named videos",
+	)
+	.argument("<files...>", "Video files")
+	.option("-s, --site <site>", "Override site detection")
+	.option("-n, --dry-run", "Report what would be written")
+	.action(
+		async (
+			files: string[],
+			options: { site?: string; dryRun?: boolean },
+			command: Command,
+		) => {
+			const { data: dataDir } = command.optsWithGlobals<{ data: string }>();
+			if (!dataDir) {
+				program.error("--data is required");
+			}
+			const ctx = await createCtx(dataDir);
+			let failed = false;
+			for (const file of files) {
+				if (!(await writeNfo(ctx, file, options).catch(() => false))) {
 					failed = true;
 				}
 			}

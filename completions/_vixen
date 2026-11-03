@@ -5,6 +5,7 @@ _vixen() {
 		'scrape:Scrape video metadata, compress, commit, and push'
 		'checkout:Clone or update the vixen metadata repo'
 		'canonical:Build the canonical filename for a video file'
+		'nfo:Write Plex NFO metadata and artwork next to canonically named videos'
 		'help:Display help for command'
 	)
 
@@ -37,6 +38,14 @@ _vixen() {
 				canonical)
 					_arguments \
 						'(-s --site)'{-s,--site}'[Override site detection]:site:->sites' \
+						'(-h --help)'{-h,--help}'[Show help]' \
+						'*:file:_files'
+					[[ $state == sites ]] && _values 'site' blacked blackedraw deeper milfy slayed tushy tushyraw vixen wifey
+					;;
+				nfo)
+					_arguments \
+						'(-s --site)'{-s,--site}'[Override site detection]:site:->sites' \
+						'(-n --dry-run)'{-n,--dry-run}'[Report what would be written]' \
 						'(-h --help)'{-h,--help}'[Show help]' \
 						'*:file:_files'
 					[[ $state == sites ]] && _values 'site' blacked blackedraw deeper milfy slayed tushy tushyraw vixen wifey

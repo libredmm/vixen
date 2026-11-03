@@ -4,12 +4,38 @@ import { logger } from "./log.ts";
 
 const DATE_PATTERN = /\d+[.-]\d+[.-]\d+/;
 
-interface VideoEntry {
+export interface VideoImage {
+	src: string;
+	width: number;
+	height: number;
+	highdpi?: { double?: string } | null;
+}
+
+export interface VideoEntry {
 	node: {
 		videoId: string;
+		title: string;
 		releaseDate: string;
 		modelsSlugged: { name: string }[];
+		images?: { listing?: VideoImage[] | null } | null;
 	};
+}
+
+// Site files run to several MB; parse each once per process, not per file
+const siteCache = new Map<string, VideoEntry[] | null>();
+
+async function loadSite(ctx: Ctx, site: string): Promise<VideoEntry[] | null> {
+	const jsonPath = join(ctx.dir, `${site}.json`);
+	if (!siteCache.has(jsonPath)) {
+		const jsonFile = Bun.file(jsonPath);
+		if (!(await jsonFile.exists())) {
+			logger.error(`${jsonPath} does not exist`);
+			siteCache.set(jsonPath, null);
+		} else {
+			siteCache.set(jsonPath, JSON.parse(await jsonFile.text()));
+		}
+	}
+	return siteCache.get(jsonPath) ?? null;
 }
 
 function extractSite(filename: string, sites: string[]): string | null {
@@ -73,11 +99,11 @@ function buildFilename(site: string, entry: VideoEntry): string {
 	return `${titleCase(`${site} - ${date} - ${models}`)} [${entry.node.videoId}]`;
 }
 
-export async function canonicalFilename(
+export async function findEntry(
 	ctx: Ctx,
 	file: string,
 	site?: string,
-): Promise<string | null> {
+): Promise<{ site: string; entry: VideoEntry } | null> {
 	const filename = basename(file);
 
 	if (!site) {
@@ -88,14 +114,8 @@ export async function canonicalFilename(
 		return null;
 	}
 
-	const jsonPath = join(ctx.dir, `${site}.json`);
-	const jsonFile = Bun.file(jsonPath);
-	if (!(await jsonFile.exists())) {
-		logger.error(`${jsonPath} does not exist`);
-		return null;
-	}
-
-	const entries: VideoEntry[] = JSON.parse(await jsonFile.text());
+	const entries = await loadSite(ctx, site);
+	if (!entries) return null;
 
 	const date = extractDate(filename);
 	const id = extractId(filename);
@@ -131,5 +151,14 @@ export async function canonicalFilename(
 		return null;
 	}
 
-	return buildFilename(site, entry);
+	return { site, entry };
+}
+
+export async function canonicalFilename(
+	ctx: Ctx,
+	file: string,
+	site?: string,
+): Promise<string | null> {
+	const found = await findEntry(ctx, file, site);
+	return found ? buildFilename(found.site, found.entry) : null;
 }

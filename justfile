@@ -13,5 +13,8 @@ check:
     bunx tsc
     bunx biome check
 
+test:
+    bun test
+
 fix:
     bunx biome check --fix
